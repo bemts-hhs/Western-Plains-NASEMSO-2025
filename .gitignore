@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+/.quarto/
+_render/
+_site/
+*.utf8.md
+.Renviron
