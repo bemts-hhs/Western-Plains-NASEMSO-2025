@@ -94,6 +94,84 @@ Source: Iowa Trauma Registry from 2020-2024.
         -   Iowa Hospital Association's Inpatient Outpatient dataset = comprehensive
 :::
 
+## Why Risk Adjustment Matters
+
+- Raw mortality rates can mislead comparisons between hospitals.  
+- Centers treat different mixes of patients — older adults, severe trauma, or complex injuries.  
+- Fair benchmarking requires adjustment for **patient risk**.  
+- The goal: compare performance **given who each center treats**, not just raw outcomes.
+
+## Concept of Risk Adjustment
+
+- For each patient, we estimate a **predicted probability of survival**, \( P(\text{Survival}) \).  
+- The estimate depends on key variables:
+  - Injury Severity Score (ISS)
+  - Revised Trauma Score (RTS)
+  - Age Index
+  - Mechanism (Blunt vs. Penetrating)
+- These variables form a regression model with published coefficients from validated Major Trauma Outcomes Study (MTOS) research.
+
+# Probability of survival
+Modern trauma registries and EHRs will do this calculation for you.
+The survival prognosis is computed based on a logistic regression equation of the form:
+$$
+\text{Survival Probability} = \frac{1}{1 + e^{-b}}
+$$
+where 
+$$
+b = \beta_{0} + \beta_{1} \times \text{RTS} + \beta_{2} \times \text{ISS} + \beta_{3} \times \text{AgeIndex}
+$$
+Blunt and penetrating injuries use different coefficients to estimate the predicted probabilities.
+
+## From Individual to System-Level Benchmark
+
+- Compute \( P(\text{Survival}) \) for each patient.  
+- Sum these probabilities across all patients -> **Expected Survivors**.
+- Sum \( 1 - P(\text{Survival}) \) across all patients -> **Expected Decedents**. 
+- Compare to **Observed Survivors and Decedents** from actual outcomes.  
+
+## Why This is a Benchmarking Standard
+
+- The **ACS Trauma Quality Improvement Program (TQIP)** uses similar regression models for national benchmarking.  
+- This approach adjusts for injury severity, physiology, and demographics.  
+- It provides a fair, risk-adjusted performance measure.  
+- Centers can identify opportunities for improvement based on deviation from expected outcomes.  
+
+> “Predicted probability of survival provides a standardized, risk-adjusted view of trauma center performance—aligned with ACS TQIP methodology.”  
+> [ACS Trauma Quality Programs](https://www.facs.org/quality-programs/trauma/quality/trauma-quality-improvement-program/)  
+> [Trauma Risk Adjustment Overview (PubMed Central)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10649144/)
+
+# But, how do I calculate risk-adjusted metrics, what are they?
+
+# W-Score: Risk-Adjusted Performance Metric
+
+- The W-score quantifies **how a trauma center performs relative to expected outcomes**.  
+- It expresses the **difference between observed and expected survivors**, scaled to patient volume.
+
+$$
+W = \frac{A - B}{C} \times 100
+$$
+
+Where:  
+
+- \(A\) = Total number of patients with all data necessary to calculate \(P_s\) **minus** the number of those patients who died (i.e., observed survivors)  
+- \(B\) = Sum of all predicted survival probabilities (\(P_s\)) for this patient group (i.e., expected survivors)  
+- \(C\) = Total number of patients with all data necessary to calculate \(P_s\)  
+
+**Interpretation for clinicians:**  
+
+- \(W > 0\) → More survivors than expected; center performing better than average  
+- \(W < 0\) → Fewer survivors than expected; center performing worse than average  
+- Provides a **volume-adjusted, risk-adjusted measure** similar in purpose to RMM.
+
+# M-Score: Linear Binning Approach
+
+- The M-score divides patients into bins of **equal width** based on predicted survival probability, \(P_s\).  
+- Assumes that \(P_s\) is evenly distributed.  
+
+- **Problem:** \(P_s\) from logistic regression is **not normally distributed** — many patients cluster near very high or very low survival probabilities.  
+- Linear bins overrepresent some risk groups and underrepresent others, which can distort observed vs expected comparisons.
+
 ```{r setup}
 
 #| label: setup
@@ -114,8 +192,6 @@ trauma_data_path_2023 <- Sys.getenv("trauma_data_2023")
 trauma_data_path_2024 <- Sys.getenv("trauma_data_2024")
 
 # files for classification environment variables
-mech_injury_path <- Sys.getenv("mech_injury_map")
-injury_matrix_path <- Sys.getenv("injury_matrix")
 iowa_counties_districts_path <- Sys.getenv("iowa_counties_districts")
 hospital_data_path <- Sys.getenv("hospital_data_folder")
 
@@ -129,37 +205,6 @@ source(setup)
 
 #| label: load_data
 
-###_____________________________________________________________________________
-# Load the files used to categorize mechanism and nature of injury
-# based on the ICD-10 injury code
-###_____________________________________________________________________________
-
-# mechanism of injury mapping
-mechanism_injury_mapping <- readr::read_csv(
-  file = mech_injury_path
-)
-
-# select variables of interest for mappings
-mechanism_injury_mapping <- mechanism_injury_mapping |>
-  dplyr::select(
-    UPPER_CODE,
-    INTENTIONALITY,
-    CUSTOM_CATEGORY2,
-    CAUSE_OF_INJURY_AR
-  )
-
-# nature of injury mapping
-nature_injury_mapping <- readxl::read_excel(path = injury_matrix_path)
-
-# select variables of interest for mappings
-nature_injury_mapping <- nature_injury_mapping |>
-  dplyr::select(
-    ICD_10_CODE_TRIM,
-    NATURE_OF_INJURY_DESCRIPTOR,
-    BODY_REGION_CATEGORY_LEVEL_1,
-    BODY_REGION_CATEGORY_LEVEL_2
-  )
-
 # classify counties in the data
 location_data <- readxl::read_excel(path = iowa_counties_districts_path)
 
@@ -170,7 +215,6 @@ location_data <- location_data |>
 # classify IPOP data using hospital information
 hospital_data <- readxl::read_excel(path = hospital_data_path) |>
   janitor::clean_names(case = "screaming_snake")
-
 
 ### trauma data
 trauma_data_2020 <- readr::read_csv(file = trauma_data_path_2020)
@@ -272,42 +316,6 @@ trauma_data_clean <- trauma_data |>
       grepl(pattern = "o'b", x = Injury_County, ignore.case = TRUE),
       "O'Brien",
       Injury_County
-    ),
-    NATURE_OF_INJURY_DESCRIPTOR_1 = dplyr::if_else(
-      is.na(NATURE_OF_INJURY_DESCRIPTOR_1),
-      NATURE_OF_INJURY_DESCRIPTOR_2,
-      NATURE_OF_INJURY_DESCRIPTOR_1
-    ),
-    BODY_REGION_CATEGORY_LEVEL_1_1 = dplyr::if_else(
-      is.na(BODY_REGION_CATEGORY_LEVEL_1_1),
-      BODY_REGION_CATEGORY_LEVEL_1_2,
-      BODY_REGION_CATEGORY_LEVEL_1_1
-    ),
-    BODY_REGION_CATEGORY_LEVEL_2_1 = dplyr::if_else(
-      is.na(BODY_REGION_CATEGORY_LEVEL_2_1),
-      BODY_REGION_CATEGORY_LEVEL_2_2,
-      BODY_REGION_CATEGORY_LEVEL_2_1
-    ),
-    BODY_REGION_CATEGORY_LEVEL_3_1 = dplyr::if_else(
-      is.na(BODY_REGION_CATEGORY_LEVEL_3_1),
-      BODY_REGION_CATEGORY_LEVEL_3_2,
-      BODY_REGION_CATEGORY_LEVEL_3_1
-    ),
-    INTENTIONALITY_1 = dplyr::if_else(
-      is.na(INTENTIONALITY_1),
-      INTENTIONALITY_2,
-      INTENTIONALITY_1
-    ),
-    MECHANISM_1 = dplyr::if_else(is.na(MECHANISM_1), MECHANISM_2, MECHANISM_1),
-    LEVEL_FALL1_1 = dplyr::if_else(
-      is.na(LEVEL_FALL1_1),
-      LEVEL_FALL1_2,
-      LEVEL_FALL1_1
-    ),
-    CAUSE_OF_INJURY_AR_1 = dplyr::if_else(
-      is.na(CAUSE_OF_INJURY_AR_1),
-      CAUSE_OF_INJURY_AR_2,
-      CAUSE_OF_INJURY_AR_1
     )
   ) |>
   dplyr::left_join(location_data, by = c("Patient_County" = "County")) |>
@@ -341,106 +349,56 @@ trauma_data_clean <- trauma_data |>
     )
   )
 
-# get the trauma data for the year of interest
-trauma_2024 <- trauma_data_clean |> dplyr::filter(Year == 2024)
+# helper function for mode
+mode_first <- function(x) {
+  x <- na.omit(x)
+  if (length(x) == 0) {
+    return(NA_character_)
+  }
+  tab <- table(x)
+  mode_val <- names(tab)[which.max(tab)]
+  return(mode_val)
+}
+
+# Get patient level data for risk adjusted metrics
+# Remove missing values and get some categorical data for grouping
+trauma_patients <- trauma_data_clean |>
+  dplyr::filter(
+    !is.na(Probability_of_Survival_Calc),
+    !is.infinite(Probability_of_Survival_Calc),
+    !is.na(Death),
+    !is.na(Unique_Patient_ID)
+  ) |>
+  dplyr::summarize(
+    Probability_of_Survival = min(Probability_of_Survival_Calc, na.rm = TRUE),
+    Death = max(Death, na.rm = TRUE),
+    Survival = 1 - Death,
+    Trauma_Type = mode_first(Trauma_Type),
+    CAUSE_OF_INJURY_AR_1 = mode_first(CAUSE_OF_INJURY_AR_1),
+    .by = c(
+      Year,
+      Unique_Patient_ID,
+      Incident_Date,
+      Age_Range,
+      Patient_Gender
+    )
+  )
 
 ```
 
-<!-- Initial count data -->
+<!-- Initial risk adjusted data -->
 
-```{r get_initial_counts}
+```{r introduce_ps}
 
-#| label: get_initial_counts
+#| label: introduce_ps
 
 ###_____________________________________________________________________________
-# Estimate age adjusted rates of injury prevalence resulting in inpatient hospitalization
-# based on the trauma registry
+# Estimate W, M, Z scores and show the distribution of patients
 ###_____________________________________________________________________________
 
 # total falls trauma cases
-trauma_cases_years <- trauma_data_clean |>
-  injury_incident_count(Year, falls)
-
-# check overall trauma injury counts with injury location of Iowa
-trauma_data_clean_iowa <- trauma_data_clean |>
-  dplyr::filter(
-    grepl(pattern = "^ia$|iowa", x = Injury_State, ignore.case = T),
-    !is.na(Injury_County),
-    !Injury_County %in%
-      c(
-        "Not Applicable",
-        "Not Known",
-        "Not Known / Not Recorded",
-        "Not Known/Not Recorded",
-        "Rock Island"
-      )
-  )
-
-# get injury counts and case counts by year, county, and age group
-
-# injuries
-injury_counts <- trauma_data_clean_iowa |>
-  # it seems that registrars may enter incident_state as the state the patient is from
-  # observed Iowa counties paired with other states, which is improbable that it was meant as the county of another state
-  injury_incident_count(Year, Injury_County, Age_Group) |> # as the states in this dataset seem to have a very, very good spelling match with Iowa county names, so assumption is county and zip code are better sources
-  tidyr::complete(Year, Injury_County, Age_Group, fill = list(n = 0L)) |>
-  dplyr::arrange(Year, Injury_County, Age_Group) |> # returns 99 counties, and more accurate counts
-  dplyr::rename(injuries = n)
-
-# falls
-fall_counts <- trauma_data_clean_iowa |>
-  dplyr::filter(falls) |>
-  injury_incident_count(Year, Injury_County, Age_Group) |>
-  tidyr::complete(Year, Injury_County, Age_Group, fill = list(n = 0L)) |>
-  dplyr::arrange(Year, Injury_County, Age_Group) |> # returns 99 counties, and more accurate counts
-  dplyr::rename(falls = n)
-
-# falls and total injuries
-injury_fall_counts <- injury_counts |>
-  dplyr::left_join(
-    fall_counts,
-    by = dplyr::join_by(Year, Injury_County, Age_Group)
-  ) |>
-  dplyr::filter(Age_Group != "Missing") |>
-  dplyr::left_join(
-    age_group_pops_final,
-    by = c("Injury_County" = "County", "Age_Group", "Year")
-  ) |>
-  dplyr::left_join(us_age_pops_clean, by = "Age_Group")
-
-
-# get injury counts and case counts by year and age group
-
-# injury counts by age group
-iowa_injury_counts_age <- trauma_data_clean_iowa |>
-  # it seems that registrars may enter incident_state as the state the patient is from
-  # observed Iowa counties paired with other states, which is improbable that it was meant as the county of another state
-  # as the states in this dataset seem to have a very, very good spelling match with Iowa county names, so assumption is county and zip code are better sources
-  injury_incident_count(Year, Age_Group) |>
-  tidyr::complete(Year, Age_Group, fill = list(n = 0L)) |>
-  dplyr::arrange(Year, Age_Group) |> # returns 99 counties, and more accurate counts
-  dplyr::rename(injuries = n)
-
-# fall counts by age group
-iowa_fall_counts_age <- trauma_data_clean_iowa |>
-  dplyr::filter(falls) |>
-  injury_incident_count(Year, Age_Group) |>
-  tidyr::complete(Year, Age_Group, fill = list(n = 0L)) |>
-  dplyr::arrange(Year, Age_Group) |> # returns 99 counties, and more accurate counts
-  dplyr::rename(falls = n)
-
-# get falls and injuries together at the state level
-iowa_injury_fall_counts_age <- iowa_injury_counts_age |>
-  dplyr::left_join(
-    iowa_fall_counts_age,
-    by = dplyr::join_by(Year, Age_Group)
-  ) |>
-  dplyr::filter(Age_Group != "Missing") |>
-  dplyr::left_join(state_age_group_pops, by = c("Age_Group", "Year")) |>
-  dplyr::left_join(
-    us_age_pops_clean,
-    by = "Age_Group"
-  )
+first_binning <- trauma_data_clean |>
+  traumar::
 
 ```
 
@@ -853,7 +811,7 @@ In the upcoming slides, we will explore count data related to fall events by pat
 #| label: count_age_range
 
 # get counts with annual trends
-age_range_counts <- trauma_data_clean_iowa |>
+age_range_counts <- trauma_data_clean |>
   dplyr::mutate(
     Age_Range = ifelse(is.na(Age_Range), "Missing", Age_Range),
     Age_Range = factor(
@@ -949,7 +907,7 @@ From the table, we can see that the groups that fall the most are within the 50+
 #| label: count_sex
 
 # get counts
-sex_counts <- trauma_data_clean_iowa |>
+sex_counts <- trauma_data_clean |>
   dplyr::rename(Patient_Sex = Patient_Gender) |>
   dplyr::mutate(
     Patient_Sex = ifelse(
@@ -1059,7 +1017,7 @@ While males make up the majority of the trauma registry every year, females gene
 #| label: counts_race
 
 # get counts with annual trends
-race_counts <- trauma_data_clean_iowa |>
+race_counts <- trauma_data_clean |>
   dplyr::mutate(
     Patient_Race = ifelse(
       is.na(Patient_Race) |
@@ -1174,7 +1132,7 @@ gt::gtsave(data = race_gt, filename = "race_gt.png", path = figures)
 
 # get the non-white comparisons
 # get counts with annual trends
-non_white_race_counts <- trauma_data_clean_iowa |>
+non_white_race_counts <- trauma_data_clean |>
   dplyr::mutate(
     Patient_Race = ifelse(
       is.na(Patient_Race) |
@@ -1316,7 +1274,7 @@ However, when we remove Caucasians from the picture, we can see that black and h
 #| label: counts_insurance
 
 # capture counts and preserve ordering by desc(n)
-insurance_counts <- trauma_data_clean_iowa |>
+insurance_counts <- trauma_data_clean |>
   dplyr::mutate(
     Financial_Primary_Method_of_Payment = ifelse(
       is.na(Financial_Primary_Method_of_Payment) |
@@ -1486,7 +1444,7 @@ Falls disproportionately result in TBI. <!-- Body region affected by falls count
 #| label: counts_body_region
 
 # capture counts and preserve ordering by desc(n)
-body_region_counts <- trauma_data_clean_iowa |>
+body_region_counts <- trauma_data_clean |>
   dplyr::mutate(
     BODY_REGION_CATEGORY_LEVEL_2_1 = ifelse(
       is.na(BODY_REGION_CATEGORY_LEVEL_2_1),
@@ -1616,7 +1574,7 @@ We just saw how often severe injuries happen to fall patients how often do we ac
 #| label: counts_tta
 
 # get overall TTA rate for all injuries
-overall_tta_rate <- trauma_data_clean_iowa |>
+overall_tta_rate <- trauma_data_clean |>
   injury_case_count(Trauma_Team_Activated) |>
   dplyr::mutate(percent = n / sum(n)) |>
   dplyr::filter(Trauma_Team_Activated == "Trauma Team Activated") |>
@@ -1625,7 +1583,7 @@ overall_tta_rate <- trauma_data_clean_iowa |>
 # get counts of tta over the years for falls
 # versus other injury types
 # capture counts and preserve ordering by desc(n)
-tta_counts <- trauma_data_clean_iowa |>
+tta_counts <- trauma_data_clean |>
   injury_case_count(Year, falls, Trauma_Team_Activated) |>
   tidyr::pivot_wider(
     id_cols = c(falls, Trauma_Team_Activated),
@@ -1748,7 +1706,7 @@ Overall, this is true, falls make up most of our injury events in Iowa (\~ 60%),
 
 #| label: counts_falls_iss
 
-falls_iss_counts <- trauma_data_clean_iowa |>
+falls_iss_counts <- trauma_data_clean |>
   dplyr::filter(!is.na(ISS_Calculated)) |>
   injury_case_count(falls, Trauma_Team_Activated, ISS_Range) |>
   dplyr::mutate(
@@ -1851,7 +1809,7 @@ This is opposed to all other injuries where the trauma team is activated 77% of 
 #| label: mortality_rate_overall
 
 # utilize traumar to get mortality rates
-mortality_rates <- trauma_data_clean_iowa |>
+mortality_rates <- trauma_data_clean |>
   dplyr::filter(!is.na(Risk_Definition)) |>
   traumar::seqic_indicator_8(
     level = Level,
@@ -1921,7 +1879,7 @@ Falls at times have poorer outcomes than other injuries. <!-- Calculate RMM over
 
 #| label: rmm_overall
 
-rmm_overall <- trauma_data_clean_iowa |>
+rmm_overall <- trauma_data_clean |>
   dplyr::filter(!is.na(Probability_of_Survival_Calc), !is.na(Death)) |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
   dplyr::mutate(Survival = ifelse(Death, FALSE, TRUE)) |>
@@ -1985,7 +1943,7 @@ A deeper dive. <!-- Calculated RMM for bins only -->
 #| label: rm_bin_summary
 
 # get the detailed bin-level summary of overall relative mortality
-rmm_summary <- trauma_data_clean_iowa |>
+rmm_summary <- trauma_data_clean |>
   dplyr::filter(!is.na(Probability_of_Survival_Calc), !is.na(Death)) |>
   dplyr::mutate(Survival = ifelse(Death, FALSE, TRUE)) |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
@@ -2052,7 +2010,7 @@ When we examine our data carefully, we can begin to see outcomes that help us in
 
 # estimate # of fall patients lives saved over what was expected 2020-2024
 
-saved_lives <- trauma_data_clean_iowa |>
+saved_lives <- trauma_data_clean |>
   dplyr::filter(!is.na(Probability_of_Survival_Calc), !is.na(Death), falls) |>
   dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
   dplyr::group_split(Year) |>
