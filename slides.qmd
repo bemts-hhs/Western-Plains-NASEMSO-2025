@@ -47,11 +47,7 @@ Remember to mention that data in this presentation pertain only to injuries that
 
 # Accessing this presentation
 
-::: incremental
--   [Bureau of Emergency Medical and Trauma Services GitHub Page](https://github.com/bemts-hhs/)
-
--   [`{traumar}` package page](https://bemts-hhs.github.io/traumar/)
-:::
+![](figures/qrcode.svg){fig-align="center" fig-alt="QR Code for the slides to this presentation."}
 
 ::: notes
 BEMTS epidemiologist (me) is the author and maintainer of the traumar and nemsqar packages 
@@ -1141,8 +1137,9 @@ overall_saved_lives <- saved_lives |>
 
 At BEMTS, we have been hard at work creating open source software that benefits Iowans and other jurisdictions.
 
-[GitHub Page](https://github.com/bemts-hhs/) 
-[`{traumar}` package page](https://bemts-hhs.github.io/traumar/)
+`{traumar}` package page
+
+![](figures/traumar_gh.svg){fig-align="center" fig-alt="QR Code for the traumar R statistical computing package GitHub repository."}
 
 # Questions?
 
