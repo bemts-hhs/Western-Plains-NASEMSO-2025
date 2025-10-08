@@ -329,9 +329,9 @@ Where:
 ## Relative Mortality Metric (RMM): Bin-Based Approach
 
 **Interpretation for clinicians:**  
-- Positive RMM -> observed mortality is **lower than expected**, better performance.  
+- Positive RMM -> observed mortality is **lower than expected**, better performance.    
 - Negative RMM -> observed mortality is **higher than expected**, worse performance.  
-- Weighted binning ensures fair comparison across **different patient risk levels**.
+- Weighted binning ensures fair comparison across **different patient risk levels**.  
 - Easy interpretation on a scale from -1 (bad) to 1 (great), where 0 is "met expectations".
 
 ## Why Bin Weighting Matters
