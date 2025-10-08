@@ -1,0 +1,1160 @@
+---
+title: "The Relative Mortality Metric"
+subtitle: "Extending Risk-Adjusted Mortality Measurement"
+author: "Nicolas Foss, Ed.D., MS"
+date: "2025-10-08"
+format: 
+  letterbox-revealjs:
+    output-file: index.html
+    theme: custom.scss
+    footer: "Western Plains NASEMSO 2025"
+    logo: figures/HHS_PH_horiz_color_print.jpg
+    transition: slide
+    menu: true
+    slide-number: false
+    self-contained: true
+    toc: false
+    code-overflow: wrap
+    notes: true
+    progress: false
+    title-slide-attributes:
+      class: title-slide
+      data-background-color: white
+      data-background-size: cover
+      data-background-position: center
+execute: 
+  echo: false
+  warning: false
+  message: false
+  eval: true
+  include: false
+---
+
+# Objectives
+
+Today we will look at...
+
+-   injury data where injuries were cared for in Iowa
+-   conventional measures of risk-adjusted mortality
+-   introduction to Napoli et. al (2017) relative mortality metric
+-   examine Iowa trauma system performance
+    -   geographic areas
+    -   demographics and mechanism
+
+::: notes
+Remember to mention that data in this presentation pertain only to injuries that were cared for in Iowa hospitals take care of patients from across our borders frequently. Overall statistics reported in the annual trauma report will vary from those reported here.
+:::
+
+# Accessing this presentation
+
+::: incremental
+-   [Bureau of Emergency Medical and Trauma Services GitHub Page](https://github.com/bemts-hhs/)
+
+-   [`{traumar}` package page](https://bemts-hhs.github.io/traumar/)
+:::
+
+::: notes
+BEMTS epidemiologist (me) is the author and maintainer of the traumar and nemsqar packages 
+We will use traumar during this presentation later when we calculate mortality rates and risk-adjusted mortality 
+You can access the slides directly from the link above Feel free to take a look at the slideshow while we are here!
+:::
+
+# About Iowa
+
+::: {.incremental}
+
+- Inclusive trauma system
+- 121 facilities
+- 2 Level I, 1 Level II, 15 Level III (1 ACS verified)
+- 100 Level IV (State verified)
+- All facilities must report to the trauma registry
+
+:::
+
+# About Iowa
+
+::: {.incremental}
+
+- 116 facilities type in data to the registry
+- 5 facilities use 3rd party registry, upload
+- 97.75% of records have validity 85% or greater
+- In 2025, 92% concurrency statewide
+
+:::
+
+# About the data
+
+Source: Iowa Trauma Registry from 2020-2024.
+
+::: incremental
+-   Check out [Trauma Data Registry](https://hhs.iowa.gov/health-prevention/providers-professionals/emergency-medical-services-trauma/trauma-system-resources/trauma-data-registry) for inclusion criteria.
+-   The trauma registry...
+    -   ...houses data on the most severe injuries.
+    -   ...does not register all injuries in Iowa.
+        -   Iowa Hospital Association's Inpatient Outpatient dataset = comprehensive
+:::
+
+# Why Risk Adjustment Matters
+
+- Raw mortality rates can mislead comparisons between hospitals.  
+- Centers treat different mixes of patients — older adults, severe trauma, or complex injuries.  
+
+# Why Risk Adjustment Matters
+
+- Fair benchmarking requires adjustment for **patient risk**.  
+- The goal: compare performance **given who each center treats**, not just raw outcomes.
+
+## Concept of Risk Adjustment
+
+- For each patient, we estimate a **predicted probability of survival**, $P(\text{Survival})$.  
+- The estimate depends on key variables:
+  - Injury Severity Score (ISS)
+  - Revised Trauma Score (RTS)
+  - Age Index (<= 54, > 54)
+  - Mechanism (Blunt vs. Penetrating)
+
+::: {.notes}
+
+These variables form a regression model with published coefficients from validated Major Trauma Outcomes Study (MTOS) research.
+  
+:::
+
+## Probability of survival
+
+Modern trauma registries and EHRs will do this calculation for you.
+
+The survival prognosis is computed based on a logistic regression equation of the form:
+$$
+\text{Survival Probability} = \frac{1}{1 + e^{-b}}
+$$
+
+## Probability of survival
+
+where 
+$$
+b = \beta_{0} + \beta_{1} \times \text{RTS} + \beta_{2} \times \text{ISS} + \beta_{3} \times \text{AgeIndex}
+$$
+
+Blunt and penetrating injuries use different coefficients to estimate the predicted probabilities.
+
+## From Individual to System-Level Benchmark
+
+- Compute $P(\text{Survival})$ for each patient.  
+- Sum these probabilities across all patients -> **Expected Survivors**.
+- Sum $1 - P(\text{Survival})$ across all patients -> **Expected Decedents**. 
+- Compare to **Observed Survivors and Decedents** from actual outcomes.  
+
+## Why This is a Benchmarking Standard
+
+- The **ACS Trauma Quality Improvement Program (TQIP)** uses similar models for national benchmarking.  
+- This approach adjusts for injury severity, physiology, and demographics.  
+
+## Why This is a Benchmarking Standard
+
+- It provides a fair, risk-adjusted performance measure.  
+- Centers can identify opportunities for improvement based on deviation from expected outcomes.  
+> [ACS Trauma Quality Programs](https://www.facs.org/quality-programs/trauma/quality/trauma-quality-improvement-program/)  
+> [Trauma Risk Adjustment Overview (PubMed Central)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10649144/)
+
+# But, how do I calculate risk-adjusted metrics, what are they?
+#mathishard
+
+# W-Score
+
+- The W-score quantifies **how a trauma center performs relative to expected outcomes**.  
+- It expresses the **difference between observed and expected survivors**, scaled to patient volume.
+
+$$
+W = \frac{A - B}{C} \times 100
+$$
+
+# W-Score
+
+Where:  
+
+- $A$ = Total number of patients with all data necessary to calculate $P(Survival)$ **minus** the number of those patients who died
+- $B$ = Sum of all predicted survival probabilities $P(Survival)$ for this patient group  
+- $C$ = Total number of patients with all data necessary to calculate $P(Survival)$
+
+# W-Score
+
+**Interpretation for clinicians:**  
+
+- $W > 0$ -> More survivors than expected; center performing better than average  
+- $W < 0$ -> Fewer survivors than expected; center performing worse than average  
+- Provides a **volume-adjusted, risk-adjusted measure** similar in purpose to RMM.
+
+# Example: W-Score Calculation
+
+Let:
+
+- $n = 900$ total patients  
+- $n_{\text{deaths}} = 40$ deaths  
+- $\sum P(Survival) = 750.3638$ (sum of predicted survivals)
+
+## Step 1: Compute observed survivors
+
+$$
+A = n - n_{\text{deaths}}
+$$
+
+$$
+A = 900 - 40 = 860
+$$
+
+## Step 2: Define expected survivors
+
+$$
+B = \sum P(Survival) = 750.3638
+$$
+
+## Step 3: Apply W-score formula
+
+$$
+W = \frac{A - B}{C} \times 100
+$$
+
+Substitute known values:
+
+$$
+W = \frac{860 - 750.3638}{900} \times 100
+$$
+
+## Step 4: Compute W-score
+
+$$
+W = \frac{109.6362}{900} \times 100 = 12.18
+$$
+
+## Step 5: Inference
+
+- $W = 12.18$  
+  -> The center achieved **about 12 more survivors per 100 patients** than expected.  
+- Indicates **better-than-expected performance** after adjusting for patient risk.
+
+## W Score is limited
+
+- The W Score method is derived from the MTOS study, which was undergirded by linear methods
+- Divides patients into bins of **equal width** based on predicted survival probability, $P(Survival)$.  
+- Assumes that $P(Survival)$ is evenly distributed.  
+
+## W Score is limited
+
+- **Problem:** $P(Survival)$ from logistic regression is **not normally distributed** — many patients cluster near very high or very low survival probabilities.  
+- Linear bins overrepresent some risk groups and underrepresent others, which can distort observed vs expected comparisons.
+
+## Distribution of Predicted Survival
+
+Empirical data show that trauma patients are **not evenly distributed** across predicted survival probabilities.
+
+Most patients presenting to trauma centers have a **very high likelihood of survival**.
+
+## MTOS Distribution
+
+| Ps Range       | Proportion of Patients |
+|:-|--:|
+| 0.96 – 1.00     | 0.842 |
+| 0.91 – 0.95     | 0.053 |
+| 0.76 – 0.90     | 0.052 |
+| 0.51 – 0.75     | 0.000 |
+| 0.26 – 0.50     | 0.043 |
+| 0.00 – 0.25     | 0.010 |
+
+## W-Score Can Be Misleading
+
+- The **W-score** is heavily influenced by the **majority of patients with very high $P(Survival)$** values (for example, $P(Survival) > 0.8$.  
+- Because most trauma patients are expected to survive, the W-score often reflects performance **among the least acute patients**, not those at highest risk.  
+
+## W-Score Can Be Misleading
+
+- This means two centers could have identical W-scores even if one performs **much better with severely injured patients**.  
+
+## Assumption vs. Reality
+
+- The W-score assumes that $P(Survival)$ values are **linearly distributed** among patients across the 0–1 range.  
+- However, observed data show that $P(Survival)$ is **highly skewed**, with most patients near 1.0.  
+- Therefore, linear bins or evenly spaced $P(Survival)$ categories **overweight low-acuity patients** and **underweight critical cases**.
+
+## Take-Home Message on the W Score
+
+- W-score alone provides a **partial picture** of trauma center performance.  
+- For a fair comparison, models such as the **Relative Mortality Metric (RMM)** use **non-linear binning** that reflects the true, **non-normal $P(Survival)$ distribution** observed in real trauma data.
+
+# Relative Mortality Metric (RMM)
+
+- Napoli et al. (2017)
+- The RMM is a **risk-adjusted metric** that compares observed mortality to predicted mortality.
+- It accounts for patient-level severity, physiology, and demographics using previously validated coefficients.
+
+# Relative Mortality Metric (RMM)
+
+- Positive RMM -> higher-than-expected survival.  
+- Negative RMM -> lower-than-expected survival.  
+- Helps **benchmark trauma center performance** fairly.
+
+## Non-Linear Binning: Why It Matters
+
+- Because $P(Survival)$ is skewed, **non-linear bins** capture the distribution more accurately.  
+- Examples of non-linear binning:  
+  - Quantiles (equal number of patients per bin)  
+  - Clinically meaningful thresholds (e.g., very high risk vs moderate vs low)  
+
+## Non-Linear Binning: Why It Matters
+
+- This allows **fairer comparison of observed vs expected outcomes** across risk groups.  
+- Ensures that the benchmarking metrics (RMM, W-score) reflect actual patient risk rather than arbitrary binning.
+
+## Relative Mortality Metric (RMM): Bin-Based Approach
+
+- RMM compares **observed vs. expected mortality** while accounting for patient risk distribution.  
+- Patients are grouped into **bins** based on predicted survival probabilities $P(Survival)$.  
+- Each bin contributes proportionally to the metric based on its width or patient count.
+
+## Relative Mortality Metric (RMM): Bin-Based Approach
+
+$$
+\text{RMM} = \frac{\sum_{b=1}^{j} R_b \, (A_b - O_b)}{\sum_{b=1}^{j} R_b \, A_b}
+$$
+
+## Relative Mortality Metric (RMM): Bin-Based Approach
+
+Where:  
+
+- $b = 1, \dots, j$ : **bin index**, from first to last bin  
+- $j$ : total number of bins  
+- $R_b$ : width of bin $b$ or number of patients in the bin  
+- $A_b$ : predicted (expected) deaths in bin $b$  
+- $O_b$ : observed deaths in bin $b$
+
+## Relative Mortality Metric (RMM): Bin-Based Approach
+
+**Interpretation for clinicians:**  
+- Positive RMM -> observed mortality is **lower than expected**, better performance.  
+- Negative RMM -> observed mortality is **higher than expected**, worse performance.  
+- Weighted binning ensures fair comparison across **different patient risk levels**.
+
+## Why Bin Weighting Matters
+
+- Predicted survival probabilities $P(Survival)$ are **not evenly distributed** — most patients may cluster at high or low survival.  
+- Using **weighted bins** ensures that each risk group contributes appropriately to the RMM.  
+- This prevents **over- or under-representation** of patient subgroups in the metric.  
+- RMM thus provides a **clinically meaningful, risk-adjusted benchmark** for trauma center performance.
+
+## Key Takeaways for Clinicians on RMM
+
+- RMM and W-score are **risk-adjusted metrics**, accounting for patient severity and demographics.  
+- M-score linear binning can be misleading because predicted survival probabilities are **skewed**.  
+- Non-linear binning improves interpretation, particularly for **observed vs expected mortality** analyses.  
+
+## Key Takeaways for Clinicians on RMM
+
+- Using these methods allows trauma centers to **compare performance fairly** and identify opportunities for improvement.
+
+# Let's see some examples of RMM in action
+Iowa!!!
+
+<!-- Setup -->
+
+```{r setup}
+
+#| label: setup
+
+# Get path to figures folder
+figures <- Sys.getenv("figures_folder")
+
+# Path to needed functions
+setup <- Sys.getenv("setup_file")
+
+# clinical data
+
+# trauma environment variables
+trauma_data_path_2020 <- Sys.getenv("trauma_data_2020")
+trauma_data_path_2021 <- Sys.getenv("trauma_data_2021")
+trauma_data_path_2022 <- Sys.getenv("trauma_data_2022")
+trauma_data_path_2023 <- Sys.getenv("trauma_data_2023")
+trauma_data_path_2024 <- Sys.getenv("trauma_data_2024")
+
+# files for classification environment variables
+iowa_counties_districts_path <- Sys.getenv("iowa_counties_districts")
+hospital_data_path <- Sys.getenv("hospital_data_folder")
+
+# Get needed custom functions into memory
+source(setup)
+```
+
+<!-- Code to load data for presentation -->
+
+```{r load_data}
+
+#| label: load_data
+
+# classify counties in the data
+location_data <- readxl::read_excel(path = iowa_counties_districts_path)
+
+# select variables of interest for Iowa county classification
+location_data <- location_data |>
+  dplyr::select(County, Designation, Urbanicity)
+
+# classify IPOP data using hospital information
+hospital_data <- readxl::read_excel(path = hospital_data_path) |>
+  janitor::clean_names(case = "screaming_snake")
+
+### trauma data
+trauma_data_2020 <- readr::read_csv(file = trauma_data_path_2020)
+trauma_data_2021 <- readr::read_csv(file = trauma_data_path_2021)
+trauma_data_2022 <- readr::read_csv(file = trauma_data_path_2022)
+trauma_data_2023 <- readr::read_csv(file = trauma_data_path_2023)
+trauma_data_2024 <- readr::read_csv(file = trauma_data_path_2024)
+
+# union the trauma data
+trauma_data <- dplyr::bind_rows(
+  trauma_data_2020 |>
+    dplyr::mutate(dplyr::across(
+      .cols = tidyselect::matches("_zip$"),
+      ~ as.character(.)
+    )),
+  trauma_data_2021 |>
+    dplyr::mutate(dplyr::across(
+      .cols = tidyselect::matches("_zip$"),
+      ~ as.character(.)
+    )),
+  trauma_data_2022 |>
+    dplyr::mutate(dplyr::across(
+      .cols = tidyselect::matches("_zip$"),
+      ~ as.character(.)
+    )),
+  trauma_data_2023 |>
+    dplyr::mutate(dplyr::across(
+      .cols = tidyselect::matches("_zip$"),
+      ~ as.character(.)
+    )),
+  trauma_data_2024 |>
+    dplyr::mutate(dplyr::across(
+      .cols = tidyselect::matches("_zip$"),
+      ~ as.character(.)
+    ))
+)
+```
+
+<!-- Data manipulation -->
+
+```{r add_data_features}
+
+#| label: add_data_features
+
+# deal with missing values in cause of injury categories
+trauma_data_clean <- trauma_data |>
+  dplyr::mutate(
+    Maturity = ifelse(Patient_Age_Years < 18, "Peds", "Adults"),
+    .after = Age_Range
+  )
+
+# helper function for mode
+mode_first <- function(x) {
+  x <- na.omit(x)
+  if (length(x) == 0) {
+    return(NA_character_)
+  }
+  tab <- table(x)
+  mode_val <- names(tab)[which.max(tab)]
+  return(mode_val)
+}
+
+# Get patient level data for risk adjusted metrics
+# Remove missing values and get some categorical data for grouping
+trauma_patients <- trauma_data_clean |>
+  dplyr::filter(
+    !is.na(Probability_of_Survival_Calc),
+    !is.infinite(Probability_of_Survival_Calc),
+    !is.na(Death),
+    !is.na(Unique_Patient_ID)
+  ) |>
+  dplyr::summarize(
+    Probability_of_Survival = min(Probability_of_Survival_Calc, na.rm = TRUE),
+    Death = max(Death, na.rm = TRUE),
+    Survival = 1 - Death,
+    Trauma_Type = mode_first(Trauma_Type),
+    Maturity = mode_first(Maturity),
+    Patient_Gender = mode_first(Patient_Gender),
+    .by = c(
+      Year,
+      Unique_Patient_ID,
+      Incident_Date,
+      Trauma_Type,
+      Maturity,
+      Patient_Gender
+    )
+  ) |>
+  na.omit() |>
+  dplyr::filter(
+    Probability_of_Survival == min(Probability_of_Survival, na.rm = TRUE),
+    .by = c(Year, Unique_Patient_ID, Incident_Date)
+  )
+
+```
+
+<!-- Get counts to illustrate sample -->
+
+```{r record_counts}
+
+#| label: record_counts
+
+# total patient encounters
+total_n <- trauma_patients |> nrow() |> prettyNum(big.mark = ",")
+
+# patient counters by year
+total_years <- trauma_patients |>
+  dplyr::count(Year) |>
+  gt::gt() |>
+  gt::fmt_number(columns = 2, drop_trailing_zeros = TRUE) |>
+  tab_style_hhs(border_cols = 2)
+
+# save the patient encounters by year as gt table
+gt::gtsave(
+  data = total_years,
+  filename = "total_years.png",
+  path = figures,
+  expand = 2, # increases pixel density (acts like DPI)
+  zoom = 2 # magnifies rendering (crisper text)
+)
+
+```
+
+<!-- Calculate RMM at different levels of analysis -->
+
+```{r rmm_calc}
+
+#| label: rmm_calc
+
+rmm_overall <- trauma_patients |>
+  traumar::rmm(
+    Ps_col = Probability_of_Survival,
+    outcome_col = Survival,
+    group_vars = "Year",
+    bootstrap_ci = FALSE,
+    Divisor1 = 3.5,
+    Divisor2 = 3.5,
+    seed = 10232015
+  )
+
+# get RMM by trauma type
+rmm_trauma_type <- trauma_patients |>
+  traumar::rmm(
+    Ps_col = Probability_of_Survival,
+    outcome_col = Survival,
+    group_vars = c("Year", "Trauma_Type"),
+    bootstrap_ci = FALSE,
+    Divisor1 = 3.5,
+    Divisor2 = 3.5,
+    seed = 10232015
+  ) |>
+  dplyr::select(-population_CI) |>
+  tidyr::pivot_longer(
+    cols = tidyselect::matches("rmm"),
+    names_to = "RMM_label",
+    values_to = "RMM"
+  ) |>
+  tidyr::pivot_wider(
+    id_cols = Year,
+    names_from = c(Trauma_Type, RMM_label),
+    values_from = RMM
+  ) |>
+  dplyr::left_join(
+    trauma_patients |>
+      dplyr::count(Year, Trauma_Type) |>
+      tidyr::pivot_wider(
+        id_cols = Year,
+        names_from = Trauma_Type,
+        values_from = n,
+        names_prefix = "n_"
+      ),
+    by = dplyr::join_by(Year)
+  )
+
+# create the gt table for rmm by trauma type
+rmm_trauma_type_gt <- rmm_trauma_type |>
+  dplyr::relocate(n_Blunt, .after = Year) |>
+  dplyr::relocate(n_Penetrating, .after = Blunt_population_RMM_UL) |>
+  gt::gt() |>
+  gt::fmt_number(
+    columns = tidyselect::matches("rmm"),
+    decimals = 2,
+    drop_trailing_zeros = TRUE
+  ) |>
+  gt::fmt_number(
+    columns = tidyselect::matches("n_"),
+    drop_trailing_zeros = TRUE
+  ) |>
+  gt::cols_merge(
+    columns = Blunt_population_RMM_LL:Blunt_population_RMM_UL,
+    pattern = "{2} [{1}-{3}]"
+  ) |>
+  gt::cols_merge(
+    columns = Penetrating_population_RMM_LL:Penetrating_population_RMM_UL,
+    pattern = "{2} [{1}-{3}]"
+  ) |>
+  gt::cols_label(
+    n_Blunt ~ "# Blunt",
+    n_Penetrating ~ "# Penetrating",
+    Blunt_population_RMM_LL ~ "Blunt RMM",
+    Penetrating_population_RMM_LL ~ "Penetrating RMM"
+  ) |>
+  gt::tab_source_note(
+    source_note = gt::md(paste0(
+      fontawesome::fa("magnifying-glass-chart"),
+      " RMM columns indicate Estimate [95% CI Lower - Upper]"
+    ))
+  ) |>
+  tab_style_hhs(border_cols = 2:tidyselect::last_col())
+
+# save the gt table on rmm trauma type
+gt::gtsave(
+  data = rmm_trauma_type_gt,
+  filename = "rmm_trauma_type_gt.png",
+  path = figures,
+  expand = 2, # increases pixel density (acts like DPI)
+  zoom = 2 # magnifies rendering (crisper text)
+)
+
+# get RMM by adults / peds
+rmm_adults_peds <- trauma_patients |>
+  traumar::rmm(
+    Ps_col = Probability_of_Survival,
+    outcome_col = Survival,
+    group_vars = c("Year", "Maturity"),
+    bootstrap_ci = FALSE,
+    Divisor1 = 3.5,
+    Divisor2 = 3.5,
+    seed = 10232015
+  ) |>
+  dplyr::select(-population_CI) |>
+  tidyr::pivot_longer(
+    cols = tidyselect::matches("rmm"),
+    names_to = "RMM_label",
+    values_to = "RMM"
+  ) |>
+  tidyr::pivot_wider(
+    id_cols = Year,
+    names_from = c(Maturity, RMM_label),
+    values_from = RMM
+  ) |>
+  dplyr::left_join(
+    trauma_patients |>
+      dplyr::count(Year, Maturity) |>
+      tidyr::pivot_wider(
+        id_cols = Year,
+        names_from = Maturity,
+        values_from = n,
+        names_prefix = "n_"
+      ),
+    by = dplyr::join_by(Year)
+  )
+
+# create the gt table for rmm by trauma type
+rmm_adults_peds_gt <- rmm_adults_peds |>
+  dplyr::relocate(n_Adults, .after = Year) |>
+  dplyr::relocate(n_Peds, .after = Adults_population_RMM_UL) |>
+  gt::gt() |>
+  gt::fmt_number(
+    columns = tidyselect::matches("rmm"),
+    decimals = 2,
+    drop_trailing_zeros = TRUE
+  ) |>
+  gt::fmt_number(
+    columns = tidyselect::matches("n_"),
+    drop_trailing_zeros = TRUE
+  ) |>
+  gt::cols_merge(
+    columns = Adults_population_RMM_LL:Adults_population_RMM_UL,
+    pattern = "{2} [{1}-{3}]"
+  ) |>
+  gt::cols_merge(
+    columns = Peds_population_RMM_LL:Peds_population_RMM_UL,
+    pattern = "{2} [{1}-{3}]"
+  ) |>
+  gt::cols_label(
+    n_Adults ~ "# Adults",
+    n_Peds ~ "# Peds",
+    Adults_population_RMM_LL ~ "Adults RMM",
+    Peds_population_RMM_LL ~ "Peds RMM"
+  ) |>
+  gt::tab_source_note(
+    source_note = gt::md(paste0(
+      fontawesome::fa("magnifying-glass-chart"),
+      " RMM columns indicate Estimate [95% CI Lower - Upper]"
+    ))
+  ) |>
+  tab_style_hhs(border_cols = 2:tidyselect::last_col())
+
+# save the gt table on rmm trauma type
+gt::gtsave(
+  data = rmm_adults_peds_gt,
+  filename = "rmm_adults_peds_gt.png",
+  path = figures,
+  expand = 2, # increases pixel density (acts like DPI)
+  zoom = 2 # magnifies rendering (crisper text)
+)
+
+# get RMM by gender
+rmm_gender <- trauma_patients |>
+  dplyr::filter(Patient_Gender %in% c("Male", "Female")) |>
+  traumar::rmm(
+    Ps_col = Probability_of_Survival,
+    outcome_col = Survival,
+    group_vars = c("Year", "Patient_Gender"),
+    bootstrap_ci = FALSE,
+    Divisor1 = 3.5,
+    Divisor2 = 3.5,
+    seed = 10232015
+  ) |>
+  dplyr::select(-population_CI) |>
+  tidyr::pivot_longer(
+    cols = tidyselect::matches("rmm"),
+    names_to = "RMM_label",
+    values_to = "RMM"
+  ) |>
+  tidyr::pivot_wider(
+    id_cols = Year,
+    names_from = c(Patient_Gender, RMM_label),
+    values_from = RMM
+  ) |>
+  dplyr::left_join(
+    trauma_patients |>
+      dplyr::count(Year, Patient_Gender) |>
+      dplyr::filter(
+        !grepl(pattern = "not|intersex", x = Patient_Gender, ignore.case = TRUE)
+      ) |>
+      tidyr::pivot_wider(
+        id_cols = Year,
+        names_from = Patient_Gender,
+        values_from = n,
+        names_prefix = "n_"
+      ),
+    by = dplyr::join_by(Year)
+  ) |>
+  dplyr::mutate(dplyr::across(
+    tidyselect::matches("n_(?:F|M|I)"),
+    ~ traumar::small_count_label(var = ., cutoff = 6, replacement = NA_real_)
+  ))
+
+# create the gt table for rmm by trauma type
+rmm_gender_gt <- rmm_gender |>
+  dplyr::relocate(n_Female, .after = Year) |>
+  dplyr::relocate(n_Male, .after = Female_population_RMM_UL) |>
+  gt::gt() |>
+  gt::fmt_number(
+    columns = tidyselect::matches("rmm"),
+    decimals = 2,
+    drop_trailing_zeros = TRUE
+  ) |>
+  gt::fmt_number(
+    columns = tidyselect::matches("n_(?:F|M)"),
+    drop_trailing_zeros = TRUE
+  ) |>
+  gt::cols_merge(
+    columns = Female_population_RMM_LL:Female_population_RMM_UL,
+    pattern = "{2} [{1}-{3}]"
+  ) |>
+  gt::cols_merge(
+    columns = Male_population_RMM_LL:Male_population_RMM_UL,
+    pattern = "{2} [{1}-{3}]"
+  ) |>
+  gt::cols_label(
+    n_Female ~ "# Female",
+    n_Male ~ "# Male",
+    Female_population_RMM_LL ~ "Female RMM",
+    Male_population_RMM_LL ~ "Male RMM"
+  ) |>
+  gt::tab_source_note(
+    source_note = gt::md(paste0(
+      fontawesome::fa("magnifying-glass-chart"),
+      " RMM columns indicate Estimate [95% CI Lower - Upper]"
+    ))
+  ) |>
+  tab_style_hhs(border_cols = 2:tidyselect::last_col())
+
+# save the gt table on rmm trauma type
+gt::gtsave(
+  data = rmm_gender_gt,
+  filename = "rmm_gender_gt.png",
+  path = figures,
+  expand = 2, # increases pixel density (acts like DPI)
+  zoom = 2 # magnifies rendering (crisper text)
+)
+
+# plot the RMM data over time
+rmm_overall_plot <- rmm_overall |>
+  ggplot2::ggplot(ggplot2::aes(
+    x = Year,
+    y = population_RMM,
+    fill = "cornflowerblue"
+  )) +
+  ggplot2::geom_col(
+    alpha = 0.25,
+    width = 0.5,
+    position = ggplot2::position_dodge(width = 0.75)
+  ) +
+  ggplot2::geom_errorbar(
+    ggplot2::aes(ymin = population_RMM_LL, ymax = population_RMM_UL),
+    position = ggplot2::position_dodge(width = 0.75),
+    width = 0.25
+  ) +
+  ggthemes::scale_fill_tableau() +
+  ggplot2::guides(fill = "none") +
+  ggplot2::labs(
+    x = "",
+    y = "Relative Mortality Metric",
+    caption = "*Errorbars indicate 95% CI"
+  ) +
+  traumar::theme_cleaner(base_size = 20)
+
+# save the ggplot object
+ggplot2::ggsave(
+  filename = "rmm_overall_plot.png",
+  plot = rmm_overall_plot,
+  path = figures
+)
+
+# calculate RMM by emergency preparedness districts
+rmm_districts <- trauma_data_clean |>
+  dplyr::filter(
+    !is.na(Probability_of_Survival_Calc),
+    !is.infinite(Probability_of_Survival_Calc),
+    !is.na(Death)
+  ) |>
+  dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
+  dplyr::mutate(Survival = 1 - Death) |>
+  traumar::rmm(
+    Ps_col = Probability_of_Survival_Calc,
+    outcome_col = Survival,
+    group_vars = "County",
+    bootstrap_ci = FALSE,
+    Divisor1 = 3.5,
+    Divisor2 = 3.5,
+    seed = 10232015
+  ) |>
+  dplyr::filter(!is.na(County))
+
+```
+
+# Data used for RMM calculations in Iowa
+- Sample data
+- Removed all missings for the larger dataset
+- Lowest Ps value and found if a patient ever died per injury event
+- n = `{r} total_n` patient encounter sample
+
+# Data used for RMM calculations in Iowa
+
+![](figures/total_years.png){fig-alt="A statistical table showing counts of patient records samples by year used in the relative mortality metric calculations for Iowa." fig-align="center"}
+
+# State-level RMM 2020-2024
+
+![](figures/rmm_overall_plot.png){fig-alt="A column chart by year from 2020 through 2024 of the calculated relative mortality metric, with one column per year from 2020 through 2024. 95% confidence intervals are visualized as errorbars with whiskers indicating the estimated error." fig-align="center"}
+
+::: notes
+
+These are overall RMM, and give us overall performance on a statewide, inclusive trauma system, but they do not show us how Iowa did with blunt vs. penetrating, adults vs. peds, or with different primary external cause of injury.
+
+:::
+
+## Digging deeper
+
+<!-- Calculated RMM for bins only -->
+
+```{r rm_bin_summary}
+
+#| label: rm_bin_summary
+
+# get the detailed bin-level summary of overall relative mortality
+rmm_summary <- trauma_patients |>
+  traumar::rm_bin_summary(
+    Ps_col = Probability_of_Survival,
+    outcome_col = Survival,
+    group_vars = NULL,
+    bootstrap_ci = FALSE,
+    Divisor1 = 3.5,
+    Divisor2 = 3.5,
+    seed = 10232015
+  )
+
+# remove some columns to help interpretation
+rmm_summary_final <- rmm_summary |>
+  dplyr::select(-tidyselect::matches("_(U|L)L$|_CI$|R_b$|midpoint")) |>
+  dplyr::rename(
+    Bin = bin_number,
+    Alive = TA_b,
+    Deceased = TD_b,
+    N = N_b,
+    `Obs. Deaths` = EM_b,
+    `Pred. Surv` = AntiS_b,
+    `Pred. Death` = AntiM_b,
+    `Bin Start` = bin_start,
+    `Bin End` = bin_end,
+    RMM = population_RMM
+  ) |>
+  dplyr::relocate(`Bin Start`, .after = Bin) |>
+  dplyr::relocate(`Bin End`, .after = `Bin Start`)
+
+# generate the gt table
+rmm_summary_gt <- rmm_summary_final |>
+  gt::gt() |>
+  gt::fmt_percent(
+    columns = c("Bin Start", "Bin End", "Obs. Deaths":"Pred. Death")
+  ) |>
+  gt::fmt_number(columns = Alive:N, drop_trailing_zeros = TRUE) |>
+  gtExtras::gt_plt_bar(column = RMM, scale_type = "number", accuracy = 0.001) |>
+  tab_style_hhs(border_cols = 2:tidyselect::last_col())
+
+# save the gt object
+gt::gtsave(
+  data = rmm_summary_gt,
+  filename = "rmm_summary_gt.png",
+  path = figures,
+  vwidth = 1600, # increase width in pixels
+  vheight = 900, # increase height in pixels
+  expand = 2, # increases pixel density (acts like DPI)
+  zoom = 2 # magnifies rendering (crisper text)
+)
+
+```
+
+![](figures/rmm_summary_gt.png){fig-alt="A statistical table using data from 2020 through 2024 showing the calculated relative mortality metric by probability of survival groups. The start and endpoints for each bin are shown for 8 groups, along with the total alive, total dead, total patients, and the predicted survivors and predicted deaths for each bin. The last column is a horizontal bar graph visualizing the relative mortality metric estimation." fig-align="center"}
+
+::: notes
+In this visual, we see mostly what we would expect, which is that mortality rates increase as the probability of survival decreases.
+
+However, we might like to know why, among patients with \> 88% probabilyt of survival, which the RMM is so low at \~ 0.3 compared to adjacent groups \>= 96%?
+
+When we examine our data carefully, we can begin to see outcomes that help us inform meaningful performance improvement processes that can in turn save lives.
+:::
+
+## RMM by Trauma Type
+
+![](figures/rmm_trauma_type_gt.png){fig-alt="A statistical table using data from 2020 through 2024 showing the calculated relative mortality metric by documented trauma type (blunt or penetrating). 95% confidence intervals are shown beside the RMM estimates for each trauma type for each year 2020-2024." fig-align="center"}
+
+::: {.notes}
+
+Here, we can see more granular detail about state-level performance based on the trauma type.
+
+This could be calculated by county or district and then by type if desired, or as many groups as would be helpful.
+
+:::
+
+## RMM by Age Group
+
+![](figures/rmm_adults_peds_gt.png){fig-alt="A statistical table using data from 2020 through 2024 showing the calculated relative mortality metric by documented age group (adults or peds). 95% confidence intervals are shown beside the RMM estimates for each of adults and peds for each year 2020-2024." fig-align="center"}
+
+::: {.notes}
+
+It is also possible to calculate RMM by age group, in this case simply by whether or not the patient had an age in years >= 18 years or < 18 years.
+
+:::
+
+## RMM by Biological Sex
+
+![](figures/rmm_gender_gt.png){fig-alt="A statistical table using data from 2020 through 2024 showing the calculated relative mortality metric by documented biological sex (males or females). 95% confidence intervals are shown beside the RMM estimates for each of males and females for each year 2020-2024." fig-align="center"}
+
+::: {.notes}
+
+It is also possible to calculate RMM by biological sex, which could be further grouped by age groups to see what disparities may exist among age groups and gender groups.
+
+:::
+
+<!-- Create the sf object for the leaflet map -->
+
+```{r create_sf}
+
+#| label: create_sf
+
+# Get Iowa counties as sf object
+iowa_counties <- tigris::counties(state = "IA", cb = TRUE, class = "sf")
+
+# Join rates and reproject to WGS84
+rmm_districts_sf <- iowa_counties |>
+  dplyr::left_join(
+    rmm_districts,
+    by = dplyr::join_by(NAME == County)
+  ) |>
+  sf::st_transform(crs = 4326) # WGS84 for Leaflet
+
+```
+
+<!-- Helper functions for palettes within leaflet -->
+
+```{r map_pals}
+
+#| label: map_pals
+
+# Injury palette function (magma)
+pal_injury <- leaflet::colorNumeric(
+  palette = viridis::magma(256, direction = 1),
+  domain = c(
+    min(rmm_districts_sf$population_RMM, na.rm = TRUE),
+    max(rmm_districts_sf$population_RMM, na.rm = TRUE)
+  ),
+  na.color = "white"
+)
+
+```
+
+<!-- Create the leaflet map -->
+
+```{r leaflet_map}
+
+#| label: leaflet_map
+
+# Build the leaflet map
+
+# Start leaflet map
+map_start <- leaflet::leaflet(
+  options = leaflet::leafletOptions(
+    zoomControl = FALSE
+  )
+) |>
+  leaflet::addTiles()
+
+# add polygons
+map <- map_start |>
+  leaflet::addPolygons(
+    data = rmm_districts_sf,
+    fillColor = ~ pal_injury(population_RMM),
+    weight = 1,
+    color = "white",
+    fillOpacity = 0.85,
+    group = 1,
+    label = ~ paste(
+      NAMELSAD,
+      paste0("RMM: ", round(population_RMM, digits = 2)),
+      paste0(
+        "95% CI: [",
+        round(population_RMM_LL, 2),
+        "-",
+        round(population_RMM_UL, digits = 2),
+        "]"
+      ),
+      sep = " || "
+    ),
+    labelOptions = leaflet::labelOptions(
+      direction = "auto",
+      opacity = 0.8,
+      textsize = "12px",
+      style = list("font-family" = "Work Sans"),
+      offset = c(0, 0)
+    )
+  )
+
+# Add single legends for Injury and Falls (full range)
+trauma_map <- map |>
+  leaflet::addLegend(
+    pal = pal_injury,
+    values = rmm_districts_sf$population_RMM[
+      !is.na(rmm_districts_sf$population_RMM)
+    ],
+    title = "Relative Mortality Metric",
+    position = "topleft",
+    opacity = 0.7,
+    group = "Legend"
+  ) |>
+  htmlwidgets::onRender(
+    "
+    function(el,x){
+      var ctl = el.getElementsByClassName('leaflet-control-layers')[0];
+      if(ctl) ctl.style.opacity = 0.8;
+    }
+    "
+  )
+
+# Wrap with alt text for accessibility and force map height
+trauma_map <- htmltools::tags$div(
+  role = "img",
+  `aria-label` = "Interactive choropleth map of Iowa counties showing calculated relative mortality metric with data from 2020 to 2024.",
+  `aria-describedby` = "map-desc",
+  style = "height: 80vh;",
+  trauma_map
+)
+```
+
+## Relative Mortality Performance by County
+
+```{r print_map, include=TRUE}
+
+trauma_map
+
+```
+
+```{r lives_saved_estimation}
+
+#| label: lives_saved_estimation
+
+# estimate # of fall patients lives saved over what was expected 2020-2024
+
+saved_lives <- trauma_data_clean |>
+  dplyr::filter(!is.na(Probability_of_Survival_Calc), !is.na(Death)) |>
+  dplyr::distinct(Unique_Incident_ID, .keep_all = TRUE) |>
+  dplyr::group_split(Year) |>
+  purrr::map(\(.x) {
+    year_val <- unique(.x$Year)
+    result <- traumar::trauma_performance(
+      df = .x,
+      Ps_col = Probability_of_Survival_Calc,
+      outcome_col = Death,
+      z_method = "survival"
+    )
+    dplyr::mutate(result, Year = year_val, .before = 1)
+  }) |>
+  purrr::list_rbind()
+
+# get predicted falls deaths
+predicted_deaths <- saved_lives |>
+  dplyr::summarize(total = round(sum(Predicted_Deaths))) |>
+  dplyr::pull(total)
+
+# get observed deaths
+observed_deaths <- saved_lives |>
+  dplyr::summarize(total = sum(N_Deaths)) |>
+  dplyr::pull(total)
+
+# get overall saved lives
+overall_saved_lives <- saved_lives |>
+  dplyr::summarize(total = round(sum(Patient_Estimate))) |>
+  dplyr::pull(total)
+
+```
+
+# A job well done
+
+-   From 2020-2024, we expected `{r} prettyNum(predicted_deaths, big.mark = ",")` deaths.
+-   We observed `{r} prettyNum(observed_deaths, big.mark = ",")` deaths
+-   Overall, Iowa trauma centers saved `{r} prettyNum(overall_saved_lives, big.mark = ",")` trauma patients that were predicted to die from 2020-2024.
+
+# Takeaways
+
+::: incremental
+- It is not enough to simply review raw survival/mortality outcomes
+- Unadjusted calculation of outcomes will only skew your statistical inference.
+- Mathematically, the field has come far to provide robust solutions for good statistical inference.
+- Risk adjustment is not hard to access, given ample free and open source software (FOSS)
+:::
+
+# Analyses
+
+At BEMTS, we have been hard at work creating open source software that benefits Iowans and other jurisdictions.
+
+[GitHub Page](https://github.com/bemts-hhs/) 
+[`{traumar}` package page](https://bemts-hhs.github.io/traumar/)
+
+# Questions?
+
+# Thanks!
+
+Nicolas Foss, Ed.D., MS
+
+Epidemiologist
+
+Bureau of Emergency Medical and Trauma Services
+
+Bureau of Health Statistics
+
+Division of Public Health \> Iowa HHS
+
+C: 515.985.9627 \|\| E: nicolas.foss at hhs.iowa.gov

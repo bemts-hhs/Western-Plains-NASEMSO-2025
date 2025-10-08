@@ -1,0 +1,175 @@
+/*-- scss:defaults --*/
+/* ============================
+   Iowa Falls Symposium Theme
+   Based on Letterbox Reveal.js
+   ============================ */
+
+/* Primary Colors */
+$primary-blue: #03617A;
+$primary-green: #C6D667;
+$primary-orange: #E0A624;
+
+/* Secondary Colors */
+$secondary-navy: #19405B;
+$secondary-teal: #70C8B8;
+$secondary-forest: #2A6357;
+$secondary-gray: #4D4D4F;
+
+/* Accent Colors */
+$accent-yellow: #FDD304;
+$accent-orange: #F27026;
+$accent-purple: #694C5F;
+$accent-mint: #B9E1DA;
+
+/*-- scss:rules --*/
+
+/* ============================
+   Base Slide Styling
+   ============================ */
+.reveal {
+  background-color: #ffffff;
+  /* white background */
+  color: $secondary-teal;
+  /* teal text */
+  font-family: "Work Sans", sans-serif;
+}
+
+/* ============================
+  Footer styling
+   ============================ */
+
+/* Default footer styling (all slides except title) */
+.reveal .footer {
+  color: black;
+  font-family: "Work Sans", sans-serif;
+  font-size: 1.1em;
+  text-align: center;
+}
+
+/* Center the logo at the bottom */
+.reveal .slide-logo {
+  height: 50px !important;
+  width: 200px !important;
+  max-width: unset !important;
+  max-height: unset !important;
+  height: auto;
+  position: absolute;
+  left: 75%;
+  /* move horizontal midpoint */
+  bottom: 20px;
+  /* offset from bottom */
+}
+
+/* Title slide: font + color overrides */
+.reveal section.title-slide h1.title {
+  color: $primary-blue !important;
+  /* title color */
+  font-family: "Work Sans", sans-serif;
+  /* title font */
+  font-weight: 900;
+  /* Black */
+}
+
+.reveal section.title-slide p.subtitle {
+  color: $secondary-gray !important;
+  /* subtitle color (use a brand color if preferred) */
+  font-family: "Work Sans", sans-serif;
+  /* subtitle font */
+  font-weight: 800;
+  /* ExtraBold */
+}
+
+/* (Optional) author/date on title slide */
+.reveal section.title-slide p.author,
+.reveal section.title-slide p.date {
+  color: $secondary-teal !important;
+  font-family: "Work Sans", sans-serif;
+  font-weight: 400;
+}
+
+
+
+/* ============================
+   Heading Hierarchy
+   ============================ */
+.reveal h1 {
+  font-family: "Work Sans", sans-serif;
+  font-weight: 900;
+  /* Black */
+  color: $primary-blue;
+  font-size: 2.2em;
+}
+
+.reveal h2 {
+  font-family: "Work Sans", sans-serif;
+  font-weight: 800;
+  /* ExtraBold */
+  color: $secondary-navy;
+  font-size: 1.8em;
+}
+
+.reveal h3 {
+  font-family: "Work Sans", sans-serif;
+  font-weight: 700;
+  /* Bold */
+  color: $secondary-forest;
+  font-size: 1.5em;
+}
+
+.reveal h4 {
+  font-family: "Work Sans", sans-serif;
+  font-weight: 600;
+  /* SemiBold */
+  color: $primary-green;
+  font-size: 1.2em;
+}
+
+.reveal strong {
+  color: $primary-orange;
+  /* emphasized text */
+}
+
+/* ============================
+   Links and Navigation
+   ============================ */
+.reveal a {
+  color: $primary-blue;
+}
+
+.reveal a:hover {
+  color: $accent-orange;
+}
+
+/* ============================
+   Code Blocks
+   ============================ */
+.reveal pre code {
+  background: $accent-mint;
+  color: black;
+  border-radius: 6px;
+  padding: 0.5em;
+}
+
+/* ============================
+   Slide Number and Progress Bar
+   ============================ */
+.reveal .slide-number {
+  color: black;
+}
+
+.reveal .progress {
+  background: $secondary-navy;
+}
+
+.reveal .progress span {
+  background: $primary-green;
+}
+
+/* ============================
+   Custom Accents for Callouts
+   ============================ */
+.callout {
+  border-left: 5px solid $accent-purple;
+  background: rgba(185, 225, 218, 0.1);
+  padding: 1em;
+}
